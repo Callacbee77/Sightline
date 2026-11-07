@@ -1,0 +1,200 @@
+{
+  "entities": {
+    "StudyProject": {
+      "title": "StudyProject",
+      "description": "A user-saved film still or comic page composition analysis project.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the composition study.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "medium": {
+          "type": "string",
+          "description": "Visual medium of the analyzed plate.",
+          "enum": ["cinema", "comic"]
+        },
+        "creatorCredit": {
+          "type": "string",
+          "description": "Director, cinematographer, or comic artist attribution.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "year": {
+          "type": "string",
+          "description": "Release or publication year.",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "aspectRatio": {
+          "type": "string",
+          "description": "Aspect ratio label of the frame or page.",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "accessionNumber": {
+          "type": "string",
+          "description": "Catalog accession code.",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Asset path or compressed data URI for the study image.",
+          "minLength": 1,
+          "maxLength": 750000
+        },
+        "curatorNotes": {
+          "type": "string",
+          "description": "Overall analytical commentary on the composition.",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "shaderConfig": {
+          "type": "object",
+          "description": "WebGL optical shader parameters."
+        },
+        "guidesConfig": {
+          "type": "object",
+          "description": "Geometric composition guide and vanishing point settings."
+        },
+        "annotations": {
+          "type": "array",
+          "description": "Bounded list of up to 25 panel bounding boxes or shot annotations."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the project owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerName": {
+          "type": "string",
+          "description": "Display name of the project owner.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether the study project is visible in the public community archive."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated."
+        }
+      },
+      "required": [
+        "title",
+        "medium",
+        "creatorCredit",
+        "year",
+        "aspectRatio",
+        "accessionNumber",
+        "imageUrl",
+        "curatorNotes",
+        "shaderConfig",
+        "guidesConfig",
+        "annotations",
+        "ownerId",
+        "ownerName",
+        "isPublic",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "StylePreset": {
+      "title": "StylePreset",
+      "description": "A reusable combination of WebGL shader settings and geometric composition guides.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the style preset.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "description": {
+          "type": "string",
+          "description": "Explanation of what this preset highlights.",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "category": {
+          "type": "string",
+          "description": "Target medium for the preset.",
+          "enum": ["cinema", "comic", "universal"]
+        },
+        "shaderConfig": {
+          "type": "object",
+          "description": "Saved WebGL optical filter configuration."
+        },
+        "guidesConfig": {
+          "type": "object",
+          "description": "Saved geometric guide overlay configuration."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the preset author.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the preset author.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "isPublic": {
+          "type": "boolean",
+          "description": "Whether this preset is shared with all users."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated."
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "category",
+        "shaderConfig",
+        "guidesConfig",
+        "authorId",
+        "authorName",
+        "isPublic",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/StudyProject"
+      },
+      "description": "Stores user-created film and comic composition study projects."
+    },
+    "/stylePresets/{presetId}": {
+      "schema": {
+        "$ref": "#/entities/StylePreset"
+      },
+      "description": "Stores shared and personal WebGL shader and geometric armature presets."
+    }
+  }
+}

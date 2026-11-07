@@ -1,0 +1,218 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    // Validation Blueprint: StudyProject
+    function isValidStudyProject(data) {
+      return data.keys().hasAll([
+        'title',
+        'medium',
+        'creatorCredit',
+        'year',
+        'aspectRatio',
+        'accessionNumber',
+        'imageUrl',
+        'curatorNotes',
+        'shaderConfig',
+        'guidesConfig',
+        'annotations',
+        'ownerId',
+        'ownerName',
+        'isPublic',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'title',
+        'medium',
+        'creatorCredit',
+        'year',
+        'aspectRatio',
+        'accessionNumber',
+        'imageUrl',
+        'curatorNotes',
+        'shaderConfig',
+        'guidesConfig',
+        'annotations',
+        'ownerId',
+        'ownerName',
+        'isPublic',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+      data.medium is string && data.medium.size() >= 5 && data.medium.size() <= 6 && (data.medium == 'cinema' || data.medium == 'comic') &&
+      data.creatorCredit is string && data.creatorCredit.size() >= 1 && data.creatorCredit.size() <= 120 &&
+      data.year is string && data.year.size() >= 1 && data.year.size() <= 20 &&
+      data.aspectRatio is string && data.aspectRatio.size() >= 1 && data.aspectRatio.size() <= 32 &&
+      data.accessionNumber is string && data.accessionNumber.size() >= 1 && data.accessionNumber.size() <= 40 &&
+      data.imageUrl is string && data.imageUrl.size() >= 1 && data.imageUrl.size() <= 750000 &&
+      data.curatorNotes is string && data.curatorNotes.size() >= 0 && data.curatorNotes.size() <= 2000 &&
+      data.shaderConfig is map && data.shaderConfig.keys().size() <= 12 &&
+      data.guidesConfig is map && data.guidesConfig.keys().size() <= 12 &&
+      data.annotations is list && data.annotations.size() <= 25 && (data.annotations.size() == 0 || data.annotations[0] is map) &&
+      data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.ownerId == request.auth.uid &&
+      data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 80 &&
+      data.isPublic is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: StylePreset
+    function isValidStylePreset(data) {
+      return data.keys().hasAll([
+        'name',
+        'description',
+        'category',
+        'shaderConfig',
+        'guidesConfig',
+        'authorId',
+        'authorName',
+        'isPublic',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'name',
+        'description',
+        'category',
+        'shaderConfig',
+        'guidesConfig',
+        'authorId',
+        'authorName',
+        'isPublic',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+      data.description is string && data.description.size() >= 1 && data.description.size() <= 280 &&
+      data.category is string && data.category.size() >= 5 && data.category.size() <= 9 && (data.category == 'cinema' || data.category == 'comic' || data.category == 'universal') &&
+      data.shaderConfig is map && data.shaderConfig.keys().size() <= 12 &&
+      data.guidesConfig is map && data.guidesConfig.keys().size() <= 12 &&
+      data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 && data.authorId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.authorId == request.auth.uid &&
+      data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 80 &&
+      data.isPublic is bool &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    // Collection: /projects/{projectId}
+    match /projects/{projectId} {
+      allow get: if isValidId(projectId) && (
+        existing().isPublic == true ||
+        (isSignedIn() && existing().ownerId == request.auth.uid)
+      );
+
+      allow list: if existing().isPublic == true || (
+        isSignedIn() && existing().ownerId == request.auth.uid
+      );
+
+      allow create: if isVerifiedUser() &&
+        isValidId(projectId) &&
+        isValidStudyProject(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(projectId) &&
+        isValidStudyProject(incoming()) &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action: Update Study Project Content & Metadata
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title',
+            'medium',
+            'creatorCredit',
+            'year',
+            'aspectRatio',
+            'accessionNumber',
+            'imageUrl',
+            'curatorNotes',
+            'shaderConfig',
+            'guidesConfig',
+            'annotations',
+            'ownerName',
+            'isPublic',
+            'updatedAt'
+          ])
+        );
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(projectId) &&
+        existing().ownerId == request.auth.uid;
+    }
+
+    // Collection: /stylePresets/{presetId}
+    match /stylePresets/{presetId} {
+      allow get: if isValidId(presetId) && (
+        existing().isPublic == true ||
+        (isSignedIn() && existing().authorId == request.auth.uid)
+      );
+
+      allow list: if existing().isPublic == true || (
+        isSignedIn() && existing().authorId == request.auth.uid
+      );
+
+      allow create: if isVerifiedUser() &&
+        isValidId(presetId) &&
+        isValidStylePreset(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser() &&
+        isValidId(presetId) &&
+        isValidStylePreset(incoming()) &&
+        existing().authorId == request.auth.uid &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action: Update Style Preset Configuration
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name',
+            'description',
+            'category',
+            'shaderConfig',
+            'guidesConfig',
+            'authorName',
+            'isPublic',
+            'updatedAt'
+          ])
+        );
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(presetId) &&
+        existing().authorId == request.auth.uid;
+    }
+  }
+}

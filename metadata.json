@@ -1,0 +1,6 @@
+{
+  "name": "Mise & Gutter — Film & Comic Composition Analyzer",
+  "description": "Interactive WebGL and vector visual study workbench for dissecting cinema frames and sequential comic pages with real-time luminance heatmaps, Sobel edge shaders, perspective vanishing points, and Scott McCloud panel transition tagging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
